@@ -15,9 +15,6 @@ Outputs
 points: a vector of normalized point locations.
 */
 
-//i é uma variavel do tamanho do vetor, é o indice do vetor
-//Mudar código para que posição começe em 1, e não em 0 (matrizes não tem linha e coluna 0)
-
 typedef struct Point{
     int PointX;
     int PointY;
