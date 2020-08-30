@@ -48,7 +48,7 @@ int main(){
         Vector = realloc(Vector, sizeof(Point)*(i+1));
     }
 
-    ///
+    /// a
     Dado Param[i];
     for(j=0;j<i;j++){
         Param[j].PointX = Vector[j].PointX;
