@@ -167,7 +167,6 @@ int main(){
     return 0;
 }
 
-//void *NormalizeX(int j){
 void *NormalizeX(void *in){
     Dado *receive = (Dado*) in;
 
