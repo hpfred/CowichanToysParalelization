@@ -27,21 +27,16 @@ typedef struct Point{
     int PointY;
 }Point;
 
-typedef struct Dado{
-    int PointX, PointY;
-    float NormPointX, NormPointY;
-    int Xmax,Xmin,Ymax,Ymin;
-    int i;
-}Dado;
-
-void *NormalizeX(void *in);
-void *NormalizeY(void *in);
+typedef struct FloatPoint{
+    float PointX;
+    float PointY;
+}FloatPoint;
 
 int main(){
     Point *Vector;
+    FloatPoint *Normalized;
     int i=0,j,k,l,PointFlag=0;
     double start, end;
-    //clock_t start, end;
 
     ///Cria Vector dinamico e recebe coordenadas dos pontos
     Vector = malloc(sizeof(Point));
@@ -50,15 +45,9 @@ int main(){
         i++;
         Vector = realloc(Vector, sizeof(Point)*(i+1));
     }
+    Normalized = malloc(sizeof(FloatPoint)*(i+1));
 
     omp_set_num_threads(i);
-
-    /// a
-    Dado Param[i];
-    for(j=0;j<i;j++){
-        Param[j].PointX = Vector[j].PointX;
-        Param[j].PointY = Vector[j].PointY;
-    }
 
     ///Imprime todas coordenadas registradas em Vector
     for(j=0;j<i;j++){
@@ -80,14 +69,6 @@ int main(){
     }
 
     start = omp_get_wtime();
-
-    #pragma omp parallel for
-    for(j=0;j<i;j++){
-        Param[j].Xmax = Xmax;
-        Param[j].Xmin = Xmin;
-        Param[j].Ymax = Ymax;
-        Param[j].Ymin = Ymin;
-    }
 
     ///Representação gráfica dos pontos informados, em uma matriz
     /*
@@ -116,19 +97,35 @@ int main(){
     }
     //*/
 
-    ///Para cada ponto, cria duas threads, uma para calcular a normalização de X, e outra de Y
+    ///Faz o cálculo da normalização paralelizado
+    ///Para cada ponto, cria uma thread, calculando a normalização de X e Y
     #pragma omp parallel for
     for(j=0;j<i;j++){
-        Param[j].i = j;
-        NormalizeX((void*)&(Param[j]));
-        NormalizeY((void*)&(Param[j]));
+        Normalized[j].PointX = (float)(Vector[j].PointX - Xmin)/(float)(Xmax - Xmin);
+        Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
     }
+
+    ///Outra forma de fazer com provavel maior overhead
+    ///Para cada ponto, cria duas threads, uma para calcular a normalização de X, e outra de Y
+    /*
+    #pragma omp parallel private(i) reduction(+:somatorio)
+    {
+        #pragma omp for
+        for(j=0;j<i;j++){
+            Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
+        }
+        #pragma omp for
+        for(j=0;j<i;j++){
+            Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
+        }
+    }
+    */
 
     end = omp_get_wtime();
 
     ///Imprime todas coordenadas de pontos normalizadas
     for(j=0;j<i;j++){
-        printf("(%.2f,%.2f) ",Param[j].NormPointX,Param[j].NormPointY);
+        printf("(%.2f,%.2f) ",Normalized[j].PointX,Normalized[j].PointY);
     }
     printf("\n");
 
@@ -165,24 +162,4 @@ int main(){
     ///Ao fim do progarama dar free no Vector, por boas práticas
     free(Vector);
     return 0;
-}
-
-void *NormalizeX(void *in){
-    Dado *receive = (Dado*) in;
-
-    float temp1 = (receive->PointX - receive->Xmin);
-    float temp2 = (receive->Xmax - receive->Xmin);
-    receive->NormPointX = temp1/temp2;
-
-    return NULL;
-}
-
-void *NormalizeY(void *in){
-    Dado *receive = (Dado*) in;
-
-    float temp1 = (receive->PointY - receive->Ymin);
-    float temp2 = (receive->Ymax - receive->Ymin);
-    receive->NormPointY = temp1/temp2;
-
-    return NULL;
 }
