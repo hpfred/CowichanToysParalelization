@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 /*
 This module normalizes point coordinates so that all points lie within the unit square [0..1]×[0..1].
@@ -87,13 +88,10 @@ int main(){
     }
 
     ///Faz o cálculo da normalização dos pontos
-    //printf("Entra na normalizacao\n");    //Foi usado para testar quando valores da normalização estavam dando errado
     for(j=0;j<i;j++){
         Normalized[j].PointX = (float)(Vector[j].PointX - Xmin)/(float)(Xmax - Xmin);
         Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
-        //printf("Normalizou %d\n",j);    //Foi usado para testar quando valores da normalização estavam dando errado
     }
-    //printf("Sai da normalizacao\n");    //Foi usado para testar quando valores da normalização estavam dando errado
 
     ///Imprime todas coordenadas de pontos normalizadas
     for(j=0;j<i;j++){
@@ -101,16 +99,15 @@ int main(){
     }
     printf("\n");
 
-    //(?) Descobrir qual a melhor forma de representar graficamente valor normalizados entre 0 e 1
     ///Representação gráfica dos pontos normalizados, em uma matriz
     printf("Digite 'Y' para ver representacao grafica: ");
     getchar();
     scanf("%c",&YesNot);
     if(YesNot == 'Y'){
-        for(j=0;j<i;j++){
-            for(k=0;k<i;k++){
+        for(j=0;j<=100;j++){
+            for(k=0;k<=100;k++){
                 for(l=0;l<i;l++){
-                    if(Normalized[l].PointX == ((float)k/(float)i) && Normalized[l].PointY == ((float)j/(float)i)){
+                    if((round(Normalized[l].PointX*100)/100) == ((float)k/(float)100) && (round(Normalized[l].PointY*100)/100) == ((float)j/(float)100)){
                         PointFlag = 1;
                         printf("o ");
                         break;
