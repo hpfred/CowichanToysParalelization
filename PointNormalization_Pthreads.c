@@ -30,11 +30,6 @@ typedef struct Point{
     int PointY;
 }Point;
 
-typedef struct FloatPoint{
-    float PointX;
-    float PointY;
-}FloatPoint;
-
 typedef struct Dado{
     int PointX, PointY;
     float NormPointX, NormPointY;
@@ -64,35 +59,39 @@ int main(){
 
     ///
     Dado Param[i];
-    for(j-0;j<i;j++){
+    for(j=0;j<i;j++){
         Param[j].PointX = Vector[j].PointX;
         Param[j].PointY = Vector[j].PointY;
-        Param[j].Xmax = 0;
-        Param[j].Xmin = 2147483647;
-        Param[j].Ymax = 0;
-        Param[j].Ymin = 2147483647;
     }
 
     ///Imprime número de pontos registrados
-    printf("%d\n",i);
+    //printf("%d\n",i);
     ///Imprime todas coordenadas registradas em Vector
     for(j=0;j<i;j++){
         printf("(%d,%d) ",Vector[j].PointX,Vector[j].PointY);
     }
     printf("\n");
 
+    int Xmax=0,Xmin=2147483647,Ymax=0,Ymin=2147483647;
     ///Percorrer o Vector para encontrar xmax, xmin, ymax, ymin
-    //int Xmax=0, Xmin=2147483647, Ymax=0, Ymin=2147483647;
-    /*Não compensa paralelizar, precisa checar memória compartilhada para tudo, ficando todo tempo em mutex*/
     for(j=0;j<i;j++){
-        if(Vector[j].PointX > Param[j].Xmax)
-            Param[j].Xmax = Vector[j].PointX;
-        if(Vector[j].PointX < Param[j].Xmin)
-            Param[j].Xmin = Vector[j].PointX;
-        if(Vector[j].PointY > Param[j].Ymax)
-            Param[j].Ymax = Vector[j].PointY;
-        if(Vector[j].PointY < Param[j].Ymin)
-            Param[j].Ymin = Vector[j].PointY;
+        if(Vector[j].PointX > Xmax)
+            Xmax = Vector[j].PointX;
+        if(Vector[j].PointX < Xmin)
+            Xmin = Vector[j].PointX;
+        if(Vector[j].PointY > Ymax)
+            Ymax = Vector[j].PointY;
+        if(Vector[j].PointY < Ymin)
+            Ymin = Vector[j].PointY;
+    }
+
+    for(j=0;j<i;j++){
+        Param[j].Xmax = Xmax;
+        Param[j].Xmin = Xmin;
+        Param[j].Ymax = Ymax;
+        Param[j].Ymin = Ymin;
+
+        //printf("Xmx=%d Xmn=%d Ymx=%d Ymn=%d\n",Param[j].Xmax,Param[j].Xmin,Param[j].Ymax,Param[j].Ymin);
     }
 
     ///Representação gráfica dos pontos informados, em uma matriz
@@ -102,8 +101,8 @@ int main(){
     scanf("%c",&YesNot);
     if(YesNot == 'Y'){
         /*Se for paralelizar, ver depois, representação gráfica não faz parte do toy*/
-        for(j=1;j<=Param[0].Ymax;j++){
-            for(k=1;k<=Param[0].Xmax;k++){
+        for(j=1;j<=Ymax;j++){
+            for(k=1;k<=Xmax;k++){
                 for(l=0;l<i;l++){
                     if(Vector[l].PointX == k && Vector[l].PointY == j){
                         PointFlag = 1;
@@ -120,10 +119,6 @@ int main(){
         }
     }
 
-    for(j=0;j<i;j++){
-        Param[j].Vector = Vector;
-        //Param[j].i = i;     //E aí? Aqui ta certo ou errado? Preciso guardar o i em Dado?
-    }
     ///Para cada ponto, cria duas threads, uma para calcular a normalização de X, e outra de Y
     for(j=0;j<i;j++){
         Param[j].i = j;
@@ -138,7 +133,7 @@ int main(){
 
     ///Imprime todas coordenadas de pontos normalizadas
     for(j=0;j<i;j++){
-        printf("(%.2f,%.2f) ",Param[j].Normalized[j].PointX,Param[j].Normalized[j].PointY);
+        printf("(%.2f,%.2f) ",Param[j].NormPointX,Param[j].NormPointY);
     }
     printf("\n");
 
@@ -148,10 +143,11 @@ int main(){
     scanf("%c",&YesNot);
     if(YesNot == 'Y'){
         /*Se for paralelizar, ver depois, representação gráfica não faz parte do toy*/
-        for(j=0;j<=100;j++){
-            for(k=0;k<=100;k++){
+        #define res 50                  //res standing fro resoltion
+        for(j=0;j<=res;j++){
+            for(k=0;k<=res;k++){
                 for(l=0;l<i;l++){
-                    if((round(Param[l].Normalized[l].PointX*100)/100) == ((float)k/(float)100) && (round(Param[l].Normalized[l].PointY*100)/100) == ((float)j/(float)100)){
+                    if((round(Param[l].NormPointX*res)/res) == ((float)k/(float)res) && (round(Param[l].NormPointY*res)/res) == ((float)j/(float)res)){
                         PointFlag = 1;
                         printf("o ");
                         break;
@@ -168,8 +164,6 @@ int main(){
 
     ///Ao fim do progarama dar free no Vector, por boas práticas
     free(Vector);
-    for(j=0;j<i;j++)
-        free(Param[j].Normalized);
     return 0;
 }
 
@@ -177,32 +171,27 @@ int main(){
 void *NormalizeX(void *in){
     Dado *receive = (Dado*) in;
 
-    FloatPoint *Normalized = receive->Normalized;
-    //int i = receive->i;
-
     //Normalized[receive->i].PointX = (float)(receive->Vector[receive->i].PointX - receive->Xmin)/(float)(receive->Xmax - receive->Xmin);
-    float temp1 = (float)(receive->Vector[receive->i].PointX - receive->Xmin);
-    printf("Fez temp1 no NormalizeX %.2f\n",temp1);
-    float temp2 = (float)(receive->Xmax - receive->Xmin);
-    Normalized[receive->i].PointX = temp1/temp2;
+    float temp1 = (receive->PointX - receive->Xmin);
+    //printf("X-Xmin: %d-%d = %d\n",receive->PointX,receive->Xmin,temp1);
+    float temp2 = (receive->Xmax - receive->Xmin);
+    //printf("Xmax-Xmin: %d-%d = %d\n",receive->Xmax,receive->Xmin,temp2);
+    receive->NormPointX = temp1/temp2;
 
-    printf("NormalizouX %d\n",receive->i);
+    //printf("NormalizouX %d\n",receive->i);
     return NULL;
 }
 
 void *NormalizeY(void *in){
     Dado *receive = (Dado*) in;
 
-    FloatPoint *Normalized = receive->Normalized;
-    //int i = receive->i;
-    printf("Dados recebidos: %d, ")
-
     //Normalized[receive->i].PointY = (float)(receive->Vector[receive->i].PointY - receive->Ymin)/(float)(receive->Ymax - receive->Ymin);
-    float temp1 = (float)(receive->Vector[receive->i].PointY - receive->Ymin);
-    printf("Fez temp1 no NormalizeY %.2f\n",temp1);
-    float temp2 = (float)(receive->Ymax - receive->Ymin);
-    Normalized[receive->i].PointY = temp1/temp2;
+    float temp1 = (receive->PointY - receive->Ymin);
+    //printf("Y-Ymin: %d-%d = %d\n",receive->PointY,receive->Ymin,temp1);
+    float temp2 = (receive->Ymax - receive->Ymin);
+    //printf("Ymax-Ymin: %d-%d = %d\n",receive->Ymax,receive->Ymin,temp2);
+    receive->NormPointY = temp1/temp2;
 
-    printf("NormalizouY %d\n",receive->i);
+    //printf("NormalizouY %d\n",receive->i);
     return NULL;
 }
