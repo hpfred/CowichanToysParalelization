@@ -36,8 +36,8 @@ typedef struct FloatPoint{
 }FloatPoint;
 
 typedef struct Dado{
-    Point *Vector;
-    FloatPoint *Normalized;
+    int PointX, PointY;
+    float NormPointX, NormPointY;
     int Xmax,Xmin,Ymax,Ymin;
     int i;
 }Dado;
@@ -47,13 +47,7 @@ void *NormalizeY(void *in);
 
 int main(){
     Point *Vector;
-    //FloatPoint *Normalized;
     int i=0,j,k,l,PointFlag=0;
-
-    /// Inicializa as funções de pthreads
-    pthread_t tid[i+i];
-    pthread_mutex_init(&m, NULL);   // pthread init pode retornar erro, fazer teste
-    pthread_cond_init(&cond, NULL);
 
     ///Cria Vector dinamico e recebe coordenadas dos pontos
     Vector = malloc(sizeof(Point));
@@ -63,16 +57,20 @@ int main(){
         Vector = realloc(Vector, sizeof(Point)*(i+1));
     }
 
+    /// Inicializa as funções de pthreads
+    pthread_t tid[i+i];
+    pthread_mutex_init(&m, NULL);   // pthread init pode retornar erro, fazer teste
+    pthread_cond_init(&cond, NULL);
+
     ///
     Dado Param[i];
     for(j-0;j<i;j++){
-        //Param[j].Normalized = malloc(sizeof(FloatPoint)*(i+1));
-        Param[j].Normalized = malloc(sizeof(FloatPoint));
+        Param[j].PointX = Vector[j].PointX;
+        Param[j].PointY = Vector[j].PointY;
         Param[j].Xmax = 0;
         Param[j].Xmin = 2147483647;
         Param[j].Ymax = 0;
         Param[j].Ymin = 2147483647;
-    //Dado Param = {Vector,Normalized,0,2147483647,0,2147483647}
     }
 
     ///Imprime número de pontos registrados
