@@ -15,9 +15,8 @@ Outputs
 points: a vector of normalized point locations.
 */
 
-///i é uma variavel do tamanho do vetor, é o indice do vetor
-
-///Mudar código para que posição começe em 1, e não em 0 (matrizes não tem linha e coluna 0)
+//i é uma variavel do tamanho do vetor, é o indice do vetor
+//Mudar código para que posição começe em 1, e não em 0 (matrizes não tem linha e coluna 0)
 
 typedef struct Point{
     int PointX;
@@ -35,7 +34,7 @@ int main(){
     int i=0,j,k,l,PointFlag=0;
 
     Vector = malloc(sizeof(Point));
-    ///Aidiconar texto explicando para informar pares de coordenadas de pontos, e digitar -1 para finalizar
+    //Aidiconar texto explicando para informar pares de coordenadas de pontos, e digitar -1 para finalizar
     while(scanf("%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && scanf("%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
         i++;
         Vector = realloc(Vector, sizeof(Point)*(i+1));
@@ -69,8 +68,8 @@ int main(){
     getchar();
     scanf("%c",&YesNot);
     if(YesNot == 'Y'){
-        for(j=0;j<=Ymax;j++){
-            for(k=0;k<=Xmax;k++){
+        for(j=1;j<=Ymax;j++){
+            for(k=1;k<=Xmax;k++){
                 for(l=0;l<i;l++){
                     if(Vector[l].PointX == k && Vector[l].PointY == j){
                         PointFlag = 1;
