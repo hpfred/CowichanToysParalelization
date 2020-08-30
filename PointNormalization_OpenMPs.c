@@ -19,6 +19,7 @@ points: a vector of normalized point locations.
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <omp.h>
 #include <time.h>
 
 typedef struct Point{
@@ -39,6 +40,8 @@ void *NormalizeY(void *in);
 int main(){
     Point *Vector;
     int i=0,j,k,l,PointFlag=0;
+    double start, end;
+    //clock_t start, end;
 
     ///Cria Vector dinamico e recebe coordenadas dos pontos
     Vector = malloc(sizeof(Point));
@@ -47,6 +50,8 @@ int main(){
         i++;
         Vector = realloc(Vector, sizeof(Point)*(i+1));
     }
+
+    omp_set_num_threads(i);
 
     /// a
     Dado Param[i];
@@ -74,6 +79,9 @@ int main(){
             Ymin = Vector[j].PointY;
     }
 
+    start = omp_get_wtime();
+
+    #pragma omp parallel for
     for(j=0;j<i;j++){
         Param[j].Xmax = Xmax;
         Param[j].Xmin = Xmin;
@@ -82,12 +90,13 @@ int main(){
     }
 
     ///Representação gráfica dos pontos informados, em uma matriz
+    /*
     char YesNot;
     printf("Digite 'Y' para ver representacao grafica: ");
     getchar();
     scanf("%c",&YesNot);
     if(YesNot == 'Y'){
-        /*Se for paralelizar, ver depois, representação gráfica não faz parte do toy*/
+        //Se for paralelizar, ver depois, representação gráfica não faz parte do toy
         for(j=1;j<=Ymax;j++){
             for(k=1;k<=Xmax;k++){
                 for(l=0;l<i;l++){
@@ -105,18 +114,17 @@ int main(){
             printf("\n");
         }
     }
+    //*/
 
     ///Para cada ponto, cria duas threads, uma para calcular a normalização de X, e outra de Y
+    #pragma omp parallel for
     for(j=0;j<i;j++){
         Param[j].i = j;
-        pthread_create(&(tid[j]), NULL, NormalizeX, (void*)&(Param[j]));
-        pthread_create(&(tid[i+j]), NULL, NormalizeY, (void*)&(Param[j]));
+        NormalizeX((void*)&(Param[j]));
+        NormalizeY((void*)&(Param[j]));
     }
 
-    ///Aguarda o término da normalização
-    for(j=0;j<i+i;j++){
-        pthread_join(tid[j], NULL);
-    }
+    end = omp_get_wtime();
 
     ///Imprime todas coordenadas de pontos normalizadas
     for(j=0;j<i;j++){
@@ -125,11 +133,12 @@ int main(){
     printf("\n");
 
     ///Representação gráfica dos pontos normalizados, em uma matriz
+    /*
     printf("Digite 'Y' para ver representacao grafica: ");
     getchar();
     scanf("%c",&YesNot);
     if(YesNot == 'Y'){
-        /*Se for paralelizar, ver depois, representação gráfica não faz parte do toy*/
+        //Se for paralelizar, ver depois, representação gráfica não faz parte do toy
         #define res 50                  //res standing fro resoltion
         for(j=0;j<=res;j++){
             for(k=0;k<=res;k++){
@@ -148,6 +157,10 @@ int main(){
             printf("\n");
         }
     }
+    //*/
+
+    ///Imprime o tempo registrado
+    printf("\nTempo: %4.5lf\n",end-start);
 
     ///Ao fim do progarama dar free no Vector, por boas práticas
     free(Vector);
