@@ -11,13 +11,15 @@ int main(){
         return 1;
     }
     printf("Arquivo abriu\n");
-    for(i=0;i<num;i++){
+    printf("Quantos pontos devem ser gerados?\n");
+    scanf("%d",&num);
+    for(i=0;i<num*2;i++){
         fprintf(arquivo,"%d",rand());
         fprintf(arquivo,"\n");
     }
     fprintf(arquivo,"-1");
     fclose(arquivo);
-    printf("Gerados %d pontos\n",num/2);
+    printf("Gerados %d pontos\n",num);
     printf("Dado escrito para arquivo");
     return 0;
 }

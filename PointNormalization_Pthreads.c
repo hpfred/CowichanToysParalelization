@@ -37,8 +37,13 @@ typedef struct Dado{
     int i;
 }Dado;
 
+int freeThreads;
+
 void *NormalizeX(void *in);
 void *NormalizeY(void *in);
+void *NormalizeXY(void *in);
+void *NormalizeAllX(void *in);
+void *NormalizeAllY(void *in);
 
 void CoordVec(int i, Point *Vector);
 void CoordNorm(int i, Dado *Param);
@@ -47,7 +52,7 @@ void GraphNorm(int i,Dado *Param);
 
 int main(){
     Point *Vector;
-    int i=0,j;
+    int i=0,j,choice,numThreads;
     struct timeval  start, end;
 
     FILE *arquivo;
@@ -55,7 +60,9 @@ int main(){
 
     ///Cria Vector dinamico e recebe coordenadas dos pontos
     Vector = malloc(sizeof(Point));
-    printf("Informe pares de coordenadas dos pontos. Digite -1 para encerrar recebimento de pontos.\n");
+    ///Agora para possuir muitas entradas possui um gerador de arquivos para se fazer um teste mais observável
+    ///Então substituir o pedido para informar por um pedido para gerar um arquivo. Talvez também implementar um aviso caso ele falhe ao abrir o arquivo.
+    //printf("Informe pares de coordenadas dos pontos. Digite -1 para encerrar recebimento de pontos.\n");
     while(fscanf(arquivo,"%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && fscanf(arquivo,"%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
         i++;
         Vector = realloc(Vector, sizeof(Point)*(i+1));
@@ -63,9 +70,8 @@ int main(){
 
     /// Inicializa as funções de pthreads
     pthread_t tid[i+i];
-    pthread_mutex_init(&m, NULL);   // pthread init pode retornar erro, fazer teste
+    pthread_mutex_init(&m, NULL);     // pthread init pode retornar erro, fazer teste
     pthread_cond_init(&cond, NULL);
-
     ///
     Dado Param[i];
     for(j=0;j<i;j++){
@@ -96,6 +102,7 @@ int main(){
         Param[j].Xmin = Xmin;
         Param[j].Ymax = Ymax;
         Param[j].Ymin = Ymin;
+        //Param[j].i = i;
 
         //printf("Xmx=%d Xmn=%d Ymx=%d Ymn=%d\n",Param[j].Xmax,Param[j].Xmin,Param[j].Ymax,Param[j].Ymin);
     }
@@ -103,18 +110,92 @@ int main(){
     ///Representação gráfica dos pontos informados, em uma matriz
     //GraphVec(Xmax,Ymax,i,Vector);
 
-    gettimeofday(&start, NULL);
+    ///Pergunta qual implementação de Pthreads quer fazer
+    printf("Escolha a implementacao PThreads que deseja executar:\n");      //Adicionar depois uma explicação de quais as opções e pequena explicação sobre cada
+    scanf("%d",&choice);
+    switch(choice){
+        case 0:
+            gettimeofday(&start, NULL);
 
-    ///Para cada ponto, cria duas threads, uma para calcular a normalização de X, e outra de Y
-    for(j=0;j<i;j++){
-        Param[j].i = j;
-        pthread_create(&(tid[j]), NULL, NormalizeX, (void*)&(Param[j]));
-        pthread_create(&(tid[i+j]), NULL, NormalizeY, (void*)&(Param[j]));
-    }
+            ///Para cada ponto, cria duas threads, uma para calcular a normalização de X, e outra de Y
+            for(j=0;j<i;j++){
+                Param[j].i = j;
+                pthread_create(&(tid[j]), NULL, NormalizeX, (void*)&(Param[j]));
+                pthread_create(&(tid[i+j]), NULL, NormalizeY, (void*)&(Param[j]));
+            }
 
-    ///Aguarda o término da normalização
-    for(j=0;j<i+i;j++){
-        pthread_join(tid[j], NULL);
+            for(j=0;j<i+i;j++){                 ///Aguarda o término da normalização
+                pthread_join(tid[j], NULL);
+            }
+            break;
+
+        case 1:
+            gettimeofday(&start, NULL);
+
+            ///Para cada ponto, cria uma thread que calcula a normalização de X e de Y
+            for(j=0;j<i;j++){
+                Param[j].i = j;
+                pthread_create(&(tid[j]), NULL, NormalizeXY, (void*)&(Param[j]));
+            }
+
+            for(j=0;j<i;j++){                 ///Aguarda o término da normalização
+                pthread_join(tid[j], NULL);
+            }
+            break;
+
+        case 2:
+            gettimeofday(&start, NULL);
+
+            ///Cria um thread pra X e um pra Y, cada uma irá fazer um for para normalização de todos os seus
+            j=0;
+            Param[0].i = i;
+            //pthread_create(&(tid[j]), NULL, NormalizeAllX, (void*)&(Param));        //cast de void no endereço de parametro, ou no parametro em si?
+            pthread_create(&(tid[j]), NULL, NormalizeAllX, (void*)Param);
+            //pthread_create(&(tid[j+1]), NULL, NormalizeAllY, (void*)&(Param));      //(void*)Param);
+            pthread_create(&(tid[j+1]), NULL, NormalizeAllY, (void*)Param);
+
+            for(j=0;j<2;j++){                 ///Aguarda o término da normalização
+                pthread_join(tid[j], NULL);
+            }
+            break;
+
+        case 3:
+
+            ///Define um número máximo de threads. Dentro do for faz um teste se há threads livres, caso não haja fique preso em um cond_wait. Cada thread no fim de sua execução enviam um cond_signal.
+            // ^Esta última só funciona no caso das duas primeiras implementações (0 e 1)^
+            ///Mover pergunta de qual implementação pro inicio, e fazer if para caso seja a 3 já perguntar número de threads logo após
+            ///Implementada em cima da primeira aplicação, pois agora terá um limite no overhead
+            printf("Informe o numero de threads: ");
+            scanf("%d",&numThreads);
+            freeThreads = numThreads;
+
+            gettimeofday(&start, NULL);
+            //Usar cond_wait? cond_wait deve ser usado dentro de uma area em mutex. É necessário se fazer mutex?
+
+            for(j=0;j<i;j++){
+                pthread_mutex_lock(&m);
+                while(freeThreads<=0){
+                    pthread_cond_wait(&cond, &m);
+                }
+                Param[j].i = j;
+                pthread_create(&(tid[j]), NULL, NormalizeX, (void*)&(Param[j]));
+                freeThreads--;
+                pthread_mutex_unlock(&m);
+            }
+            for(j=0;j<i;j++){
+                pthread_mutex_lock(&m);
+                while(freeThreads<=0){
+                    pthread_cond_wait(&cond, &m);
+                }
+                pthread_create(&(tid[i+j]), NULL, NormalizeY, (void*)&(Param[j]));
+                freeThreads--;
+                pthread_mutex_unlock(&m);
+            }
+
+            for(j=0;j<i+i;j++){                 ///Aguarda o término da normalização
+                pthread_join(tid[j], NULL);
+            }
+            break;
     }
 
     gettimeofday(&end, NULL);
@@ -126,9 +207,9 @@ int main(){
     //GraphNorm(i,Param);
 
     ///Imprime o tempo registrado
-    //printf("\nTempo: %lf\n",(double)(end - start)/CLOCKS_PER_SEC);
     printf("Total time = %f seconds\n",(double)(end.tv_usec-start.tv_usec)/1000000+(double)(end.tv_sec-start.tv_sec));
     //printf("Total time: %f - %f = %f seconds\n",end.tv_usec,start.tv_usec,(double)(end.tv_usec-start.tv_usec)/1000000+(double)(end.tv_sec-start.tv_sec));
+    //printf("\nTempo: %lf\n",(double)(end - start)/CLOCKS_PER_SEC);
 
     ///Ao fim do progarama dar free no Vector, por boas práticas
     free(Vector);
@@ -146,6 +227,8 @@ void *NormalizeX(void *in){
     //printf("Xmax-Xmin: %d-%d = %d\n",receive->Xmax,receive->Xmin,temp2);
     receive->NormPointX = temp1/temp2;
 
+    freeThreads++;
+    pthread_cond_signal(&cond);
     //printf("NormalizouX %d\n",receive->i);
     return NULL;
 }
@@ -160,7 +243,55 @@ void *NormalizeY(void *in){
     //printf("Ymax-Ymin: %d-%d = %d\n",receive->Ymax,receive->Ymin,temp2);
     receive->NormPointY = temp1/temp2;
 
+    freeThreads++;
+    pthread_cond_signal(&cond);
     //printf("NormalizouY %d\n",receive->i);
+    return NULL;
+}
+
+void *NormalizeXY(void *in){
+    Dado *receive = (Dado*) in;
+
+    ///Normaliza X
+    float temp1 = (receive->PointX - receive->Xmin);
+    float temp2 = (receive->Xmax - receive->Xmin);
+    receive->NormPointX = temp1/temp2;
+    ///Normaliza Y
+    temp1 = (receive->PointY - receive->Ymin);
+    temp2 = (receive->Ymax - receive->Ymin);
+    receive->NormPointY = temp1/temp2;
+
+    return NULL;
+}
+
+void *NormalizeAllX(void *in){
+//*
+    Dado *receive = (Dado*) in;
+    int j;
+    float temp1,temp2;
+    int i = receive[0].i;
+    ///Poderia chamar a função Normalize X, mas para simplicidade de não ter que lidar com mais ponteiros para Dado, o cálculo da normalização está feito inteiro dentro da função
+    for(j=0;j<i;j++){
+        temp1 = (receive[j].PointX - receive[j].Xmin);
+        temp2 = (receive[j].Xmax - receive[j].Xmin);
+        receive[j].NormPointX = temp1/temp2;
+    }
+//*/
+    return NULL;
+}
+
+void *NormalizeAllY(void *in){
+//*
+    Dado *receive = (Dado*) in;
+    int j;
+    float temp1,temp2;
+    int i = receive[0].i;
+    for(j=0;j<i;j++){
+        temp1 = (receive[j].PointY - receive[j].Ymin);
+        temp2 = (receive[j].Ymax - receive[j].Ymin);
+        receive[j].NormPointY = temp1/temp2;
+    }
+//*/
     return NULL;
 }
 

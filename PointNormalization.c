@@ -46,7 +46,9 @@ int main(){
     arquivo = fopen("Arquivo","r");
 
     Vector = malloc(sizeof(Point));
-    printf("Informe pares de coordenadas dos pontos. Digite -1 para encerrar recebimento de pontos.\n");
+    ///Agora para possuir muitas entradas possui um gerador de arquivos para se fazer um teste mais observável
+    ///Então substituir o pedido para informar por um pedido para gerar um arquivo. Talvez também implementar um aviso caso ele falhe ao abrir o arquivo.
+    //printf("Informe pares de coordenadas dos pontos. Digite -1 para encerrar recebimento de pontos.\n");
     while(fscanf(arquivo,"%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && fscanf(arquivo,"%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
         i++;
         Vector = realloc(Vector, sizeof(Point)*(i+1));

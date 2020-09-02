@@ -40,7 +40,7 @@ void GraphNorm(int i,FloatPoint *Normalized);
 int main(){
     Point *Vector;
     FloatPoint *Normalized;
-    int i=0,j;
+    int i=0,j,choice;
     double start, end;
 
     FILE *arquivo;
@@ -48,7 +48,9 @@ int main(){
 
     ///Cria Vector dinamico e recebe coordenadas dos pontos
     Vector = malloc(sizeof(Point));
-    printf("Informe pares de coordenadas dos pontos. Digite -1 para encerrar recebimento de pontos.\n");
+    ///Agora para possuir muitas entradas possui um gerador de arquivos para se fazer um teste mais observável
+    ///Então substituir o pedido para informar por um pedido para gerar um arquivo. Talvez também implementar um aviso caso ele falhe ao abrir o arquivo.
+    //printf("Informe pares de coordenadas dos pontos. Digite -1 para encerrar recebimento de pontos.\n");
     while(fscanf(arquivo,"%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && fscanf(arquivo,"%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
         i++;
         Vector = realloc(Vector, sizeof(Point)*(i+1));
@@ -78,31 +80,51 @@ int main(){
     ///Representação gráfica dos pontos informados, em uma matriz
     //GraphVec(Xmax,Ymax,i,Normalized);
 
-    start = omp_get_wtime();
+    ///Pergunta qual implementação de OpenMP quer fazer
+    printf("Escolha a implementação OpenMP que deseja executar:\n");      //Adicionar depois uma explicação de quais as opções e pequena explicação sobre cada
+    scanf("%d",&choice);
+    switch(choice){
+        case 0:
+            start = omp_get_wtime();
 
-    ///Faz o cálculo da normalização paralelizado
-    ///Para cada ponto, cria uma thread, calculando a normalização de X e Y
-    #pragma omp parallel for
-    for(j=0;j<i;j++){
-        Normalized[j].PointX = (float)(Vector[j].PointX - Xmin)/(float)(Xmax - Xmin);
-        Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
-    }
+            ///Faz o cálculo da normalização paralelizado
+            ///Para cada ponto, cria uma thread, calculando a normalização de X e Y
+            #pragma omp parallel for
+            for(j=0;j<i;j++){
+                Normalized[j].PointX = (float)(Vector[j].PointX - Xmin)/(float)(Xmax - Xmin);
+                Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
+            }
+        break;
 
-    ///Outra forma de fazer com provavel maior overhead
-    ///Para cada ponto, cria duas threads, uma para calcular a normalização de X, e outra de Y
-    /*
-    #pragma omp parallel private(i) reduction(+:somatorio)
-    {
-        #pragma omp for
-        for(j=0;j<i;j++){
-            Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
-        }
-        #pragma omp for
-        for(j=0;j<i;j++){
-            Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
-        }
+        case 1:
+            start = omp_get_wtime();
+
+            ///Outra forma de fazer com provavel maior overhead
+            ///Para cada ponto, cria duas threads, uma para calcular a normalização de X, e outra de Y
+            #pragma omp parallel
+            {
+                #pragma omp for
+                for(j=0;j<i;j++){
+                    Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
+                }
+                #pragma omp for
+                for(j=0;j<i;j++){
+                    Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
+                }
+            }
+        break;
+
+        case 2:
+            start = omp_get_wtime();
+
+            ///Implementação 0, mas fazendo em agrupamentos/chunks de 4
+            #pragma omp parallel for schedule(static,4)
+            for(j=0;j<i;j++){
+                Normalized[j].PointX = (float)(Vector[j].PointX - Xmin)/(float)(Xmax - Xmin);
+                Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
+            }
+        break;
     }
-    */
 
     end = omp_get_wtime();
 
