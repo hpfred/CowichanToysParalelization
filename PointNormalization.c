@@ -31,10 +31,15 @@ typedef struct FloatPoint{
     float PointY;
 }FloatPoint;
 
+void CoordVec(int i, Point *Vector);
+void CoordNorm(int i, FloatPoint *Normalized);
+void GraphVec(int Xmax,int Ymax,int i,Point *Vector);
+void GraphNorm(int i,FloatPoint *Normalized);
+
 int main(){
     Point *Vector;
     FloatPoint *Normalized;
-    int i=0,j,k,l,PointFlag=0;
+    int i=0,j;
     struct timeval  start, end;
 
     FILE *arquivo;
@@ -49,12 +54,9 @@ int main(){
     Normalized = malloc(sizeof(FloatPoint)*(i+1));
 
     ///Imprime número de pontos registrados
-    printf("%d\n",i);
+    printf("No Pontos: %d\n",i);
     ///Imprime todas coordenadas registradas em Vector
-    for(j=0;j<i;j++){
-        printf("(%d,%d) ",Vector[j].PointX,Vector[j].PointY);
-    }
-    printf("\n");
+    //CoordVec(i,Vector);
 
     ///Percorrer o Vector para encontrar xmax, xmin, ymax, ymin
     int Xmax=0, Xmin=2147483647, Ymax=0, Ymin=2147483647;
@@ -70,9 +72,59 @@ int main(){
     }
 
     ///Representação gráfica dos pontos informados, em uma matriz
+    //GraphVec(Xmax,Ymax,i,Vector);
+
+    gettimeofday(&start, NULL);
+
+    ///Faz o cálculo da normalização dos pontos
+    for(j=0;j<i;j++){
+        Normalized[j].PointX = (float)(Vector[j].PointX - Xmin)/(float)(Xmax - Xmin);
+        Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
+    }
+
+    gettimeofday(&end, NULL);
+
+    ///Imprime todas coordenadas de pontos normalizadas
+    //CoordNorm(i,Normalized);
+
+    ///Representação gráfica dos pontos normalizados, em uma matriz
+    //GraphNorm(i,Normalized);
+
+    ///Imprime o tempo registrado
+    //printf("\nTempo: %lf\n",(double)(end - start)/CLOCKS_PER_SEC);
+    printf("Total time = %f seconds\n",(double)(end.tv_usec-start.tv_usec)/1000000+(double)(end.tv_sec-start.tv_sec));
+    //printf("Total time: %f - %f = %f seconds\n",end.tv_usec,start.tv_usec,(double)(end.tv_usec-start.tv_usec)/1000000+(double)(end.tv_sec-start.tv_sec));
+
+    ///Ao fim do progarama dar free no Vector, por boas práticas
+    free(Vector);
+    free(Normalized);
+    fclose(arquivo);
+    return 0;
+}
+
+void CoordVec(int i, Point *Vector){
+    int j;
+    for(j=0;j<i;j++){
+        printf("(%d,%d) ",Vector[j].PointX,Vector[j].PointY);
+    }
+    printf("\n");
+}
+
+void CoordNorm(int i, FloatPoint *Normalized){
+    int j;
+    for(j=0;j<i;j++){
+        printf("(%.2f,%.2f) ",Normalized[j].PointX,Normalized[j].PointY);
+    }
+    printf("\n");
+}
+
+void GraphVec(int Xmax,int Ymax,int i,Point *Vector){
     char YesNot;
+    int PointFlag=0;
+    int j,k,l;
+
     printf("Digite 'Y' para ver representacao grafica: ");
-    getchar();
+    //getchar();
     scanf("%c",&YesNot);
     if(YesNot == 'Y'){
         for(j=1;j<=Ymax;j++){
@@ -92,32 +144,22 @@ int main(){
             printf("\n");
         }
     }
+}
 
-    gettimeofday(&start, NULL);
+void GraphNorm(int i,FloatPoint *Normalized){
+    #define res 50                  //res standing for resolution
+    char YesNot;
+    int PointFlag=0;
+    int j,k,l;
 
-    ///Faz o cálculo da normalização dos pontos
-    for(j=0;j<i;j++){
-        Normalized[j].PointX = (float)(Vector[j].PointX - Xmin)/(float)(Xmax - Xmin);
-        Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
-    }
-
-    gettimeofday(&end, NULL);
-
-    ///Imprime todas coordenadas de pontos normalizadas
-    for(j=0;j<i;j++){
-        printf("(%.2f,%.2f) ",Normalized[j].PointX,Normalized[j].PointY);
-    }
-    printf("\n");
-
-    ///Representação gráfica dos pontos normalizados, em uma matriz
     printf("Digite 'Y' para ver representacao grafica: ");
     getchar();
     scanf("%c",&YesNot);
     if(YesNot == 'Y'){
-        for(j=0;j<=100;j++){
-            for(k=0;k<=100;k++){
+        for(j=0;j<=res;j++){
+            for(k=0;k<=res;k++){
                 for(l=0;l<i;l++){
-                    if((round(Normalized[l].PointX*100)/100) == ((float)k/(float)100) && (round(Normalized[l].PointY*100)/100) == ((float)j/(float)100)){
+                    if((round(Normalized[l].PointX*res)/res) == ((float)k/(float)res) && (round(Normalized[l].PointY*res)/res) == ((float)j/(float)res)){
                         PointFlag = 1;
                         printf("o ");
                         break;
@@ -131,14 +173,4 @@ int main(){
             printf("\n");
         }
     }
-
-    ///Imprime o tempo registrado
-    //printf("\nTempo: %lf\n",(double)(end - start)/CLOCKS_PER_SEC);
-    printf("Total time = %f seconds\n",(double)(end.tv_usec-start.tv_usec)/1000000+(double)(end.tv_sec-start.tv_sec));
-
-    ///Ao fim do progarama dar free no Vector, por boas práticas
-    free(Vector);
-    free(Normalized);
-    fclose(arquivo);
-    return 0;
 }

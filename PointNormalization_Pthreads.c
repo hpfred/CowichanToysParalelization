@@ -20,7 +20,7 @@ points: a vector of normalized point locations.
 #include <stdio.h>
 #include <pthread.h>
 #include <math.h>
-#include <time.h>
+#include <sys/time.h>
 
 pthread_mutex_t m, n;
 pthread_cond_t cond;
@@ -40,14 +40,23 @@ typedef struct Dado{
 void *NormalizeX(void *in);
 void *NormalizeY(void *in);
 
+void CoordVec(int i, Point *Vector);
+void CoordNorm(int i, Dado *Param);
+void GraphVec(int Xmax,int Ymax,int i,Point *Vector);
+void GraphNorm(int i,Dado *Param);
+
 int main(){
     Point *Vector;
-    int i=0,j,k,l,PointFlag=0;
+    int i=0,j;
+    struct timeval  start, end;
+
+    FILE *arquivo;
+    arquivo = fopen("Arquivo","r");
 
     ///Cria Vector dinamico e recebe coordenadas dos pontos
     Vector = malloc(sizeof(Point));
     printf("Informe pares de coordenadas dos pontos. Digite -1 para encerrar recebimento de pontos.\n");
-    while(scanf("%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && scanf("%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
+    while(fscanf(arquivo,"%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && fscanf(arquivo,"%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
         i++;
         Vector = realloc(Vector, sizeof(Point)*(i+1));
     }
@@ -65,12 +74,9 @@ int main(){
     }
 
     ///Imprime número de pontos registrados
-    //printf("%d\n",i);
+    printf("No Pontos: %d\n",i);
     ///Imprime todas coordenadas registradas em Vector
-    for(j=0;j<i;j++){
-        printf("(%d,%d) ",Vector[j].PointX,Vector[j].PointY);
-    }
-    printf("\n");
+    //CoordVec(i,Vector);
 
     int Xmax=0,Xmin=2147483647,Ymax=0,Ymin=2147483647;
     ///Percorrer o Vector para encontrar xmax, xmin, ymax, ymin
@@ -95,29 +101,9 @@ int main(){
     }
 
     ///Representação gráfica dos pontos informados, em uma matriz
-    char YesNot;
-    printf("Digite 'Y' para ver representacao grafica: ");
-    getchar();
-    scanf("%c",&YesNot);
-    if(YesNot == 'Y'){
-        /*Se for paralelizar, ver depois, representação gráfica não faz parte do toy*/
-        for(j=1;j<=Ymax;j++){
-            for(k=1;k<=Xmax;k++){
-                for(l=0;l<i;l++){
-                    if(Vector[l].PointX == k && Vector[l].PointY == j){
-                        PointFlag = 1;
-                        printf("o ");
-                        break;
-                    }
-                    PointFlag = 0;
-                }
-                if(PointFlag == 0){
-                    printf("- ");
-                }
-            }
-            printf("\n");
-        }
-    }
+    //GraphVec(Xmax,Ymax,i,Vector);
+
+    gettimeofday(&start, NULL);
 
     ///Para cada ponto, cria duas threads, uma para calcular a normalização de X, e outra de Y
     for(j=0;j<i;j++){
@@ -131,39 +117,22 @@ int main(){
         pthread_join(tid[j], NULL);
     }
 
+    gettimeofday(&end, NULL);
+
     ///Imprime todas coordenadas de pontos normalizadas
-    for(j=0;j<i;j++){
-        printf("(%.2f,%.2f) ",Param[j].NormPointX,Param[j].NormPointY);
-    }
-    printf("\n");
+    //CoordNorm(i,Param);
 
     ///Representação gráfica dos pontos normalizados, em uma matriz
-    printf("Digite 'Y' para ver representacao grafica: ");
-    getchar();
-    scanf("%c",&YesNot);
-    if(YesNot == 'Y'){
-        /*Se for paralelizar, ver depois, representação gráfica não faz parte do toy*/
-        #define res 50                  //res standing fro resoltion
-        for(j=0;j<=res;j++){
-            for(k=0;k<=res;k++){
-                for(l=0;l<i;l++){
-                    if((round(Param[l].NormPointX*res)/res) == ((float)k/(float)res) && (round(Param[l].NormPointY*res)/res) == ((float)j/(float)res)){
-                        PointFlag = 1;
-                        printf("o ");
-                        break;
-                    }
-                    PointFlag = 0;
-                }
-                if(PointFlag == 0){
-                    printf("- ");
-                }
-            }
-            printf("\n");
-        }
-    }
+    //GraphNorm(i,Param);
+
+    ///Imprime o tempo registrado
+    //printf("\nTempo: %lf\n",(double)(end - start)/CLOCKS_PER_SEC);
+    printf("Total time = %f seconds\n",(double)(end.tv_usec-start.tv_usec)/1000000+(double)(end.tv_sec-start.tv_sec));
+    //printf("Total time: %f - %f = %f seconds\n",end.tv_usec,start.tv_usec,(double)(end.tv_usec-start.tv_usec)/1000000+(double)(end.tv_sec-start.tv_sec));
 
     ///Ao fim do progarama dar free no Vector, por boas práticas
     free(Vector);
+    fclose(arquivo);
     return 0;
 }
 
@@ -193,4 +162,77 @@ void *NormalizeY(void *in){
 
     //printf("NormalizouY %d\n",receive->i);
     return NULL;
+}
+
+void CoordVec(int i, Point *Vector){
+    int j;
+    for(j=0;j<i;j++){
+        printf("(%d,%d) ",Vector[j].PointX,Vector[j].PointY);
+    }
+    printf("\n");
+}
+
+void CoordNorm(int i, Dado *Param){
+    int j;
+    for(j=0;j<i;j++){
+        printf("(%.2f,%.2f) ",Param[j].NormPointX,Param[j].NormPointY);
+    }
+    printf("\n");
+}
+
+void GraphVec(int Xmax,int Ymax,int i,Point *Vector){
+    char YesNot;
+    int PointFlag = 0;
+    int j,k,l;
+
+    printf("Digite 'Y' para ver representacao grafica: ");
+    //getchar();
+    scanf("%c",&YesNot);
+    if(YesNot == 'Y'){
+        for(j=1;j<=Ymax;j++){
+            for(k=1;k<=Xmax;k++){
+                for(l=0;l<i;l++){
+                    if(Vector[l].PointX == k && Vector[l].PointY == j){
+                        PointFlag = 1;
+                        printf("o ");
+                        break;
+                    }
+                    PointFlag = 0;
+                }
+                if(PointFlag == 0){
+                    printf("- ");
+                }
+            }
+            printf("\n");
+        }
+    }
+}
+
+void GraphNorm(int i,Dado *Param){
+    #define res 50                  //res standing for resolution
+    char YesNot;
+    int PointFlag = 0;
+    int j,k,l;
+
+    printf("Digite 'Y' para ver representacao grafica: ");
+    getchar();
+    scanf("%c",&YesNot);
+    if(YesNot == 'Y'){
+        for(j=0;j<=res;j++){
+            for(k=0;k<=res;k++){
+                for(l=0;l<i;l++){
+                    if((round(Param[l].NormPointX*res)/res) == ((float)k/(float)res) && (round(Param[l].NormPointY*res)/res) == ((float)j/(float)res)){
+                        PointFlag = 1;
+                        printf("o ");
+                        break;
+                    }
+                    PointFlag = 0;
+                }
+                if(PointFlag == 0){
+                    printf("- ");
+                }
+            }
+            printf("\n");
+        }
+    }
 }

@@ -32,19 +32,24 @@ typedef struct FloatPoint{
     float PointY;
 }FloatPoint;
 
-void GraphVector(int j,int k,int l,Point *Vector);
-void GraphNorm(int j,int k,int l,FloatPoint *Normalized);
+void CoordVec(int i, Point *Vector);
+void CoordNorm(int i, FloatPoint *Normalized);
+void GraphVec(int Xmax,int Ymax,int i,Point *Vector);
+void GraphNorm(int i,FloatPoint *Normalized);
 
 int main(){
     Point *Vector;
     FloatPoint *Normalized;
-    int i=0,j,k,l;
+    int i=0,j;
     double start, end;
+
+    FILE *arquivo;
+    arquivo = fopen("Arquivo","r");
 
     ///Cria Vector dinamico e recebe coordenadas dos pontos
     Vector = malloc(sizeof(Point));
     printf("Informe pares de coordenadas dos pontos. Digite -1 para encerrar recebimento de pontos.\n");
-    while(scanf("%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && scanf("%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
+    while(fscanf(arquivo,"%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && fscanf(arquivo,"%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
         i++;
         Vector = realloc(Vector, sizeof(Point)*(i+1));
     }
@@ -52,11 +57,10 @@ int main(){
 
     omp_set_num_threads(i);
 
+    ///Imprime número de pontos registrados
+    printf("No Pontos: %d\n",i);
     ///Imprime todas coordenadas registradas em Vector
-    for(j=0;j<i;j++){
-        printf("(%d,%d) ",Vector[j].PointX,Vector[j].PointY);
-    }
-    printf("\n");
+    //CoordVec(i,Vector);
 
     int Xmax=0,Xmin=2147483647,Ymax=0,Ymin=2147483647;
     ///Percorrer o Vector para encontrar xmax, xmin, ymax, ymin
@@ -72,7 +76,7 @@ int main(){
     }
 
     ///Representação gráfica dos pontos informados, em uma matriz
-    //GraphVector(j,k,l,Normalized);
+    //GraphVec(Xmax,Ymax,i,Normalized);
 
     start = omp_get_wtime();
 
@@ -103,28 +107,44 @@ int main(){
     end = omp_get_wtime();
 
     ///Imprime todas coordenadas de pontos normalizadas
-    for(j=0;j<i;j++){
-        printf("(%.2f,%.2f) ",Normalized[j].PointX,Normalized[j].PointY);
-    }
-    printf("\n");
+    //CoordNorm(i,Normalized);
 
     ///Representação gráfica dos pontos normalizados, em uma matriz
-    //GraphNorm(j,k,l,Normalized);
+    //GraphNorm(i,Normalized);
 
     ///Imprime o tempo registrado
     printf("\nTempo: %4.5lf\n",end-start);
 
     ///Ao fim do progarama dar free no Vector, por boas práticas
     free(Vector);
+    free(Normalized);
+    fclose(arquivo);
     return 0;
 }
 
-void GraphVector(int j,int k,int l,Point *Vector){
-    int PointFlag=0;
+void CoordVec(int i, Point *Vector){
+    int j;
+    for(j=0;j<i;j++){
+        printf("(%d,%d) ",Vector[j].PointX,Vector[j].PointY);
+    }
+    printf("\n");
+}
+
+void CoordNorm(int i, FloatPoint *Normalized){
+    int j;
+    for(j=0;j<i;j++){
+        printf("(%.2f,%.2f) ",Normalized[j].PointX,Normalized[j].PointY);
+    }
+    printf("\n");
+}
+
+void GraphVec(int Xmax,int Ymax,int i,Point *Vector){
     char YesNot;
+    int PointFlag=0;
+    int j,k,l;
 
     printf("Digite 'Y' para ver representacao grafica: ");
-    getchar();
+    //getchar();
     scanf("%c",&YesNot);
     if(YesNot == 'Y'){
         for(j=1;j<=Ymax;j++){
@@ -146,10 +166,11 @@ void GraphVector(int j,int k,int l,Point *Vector){
     }
 }
 
-void GraphNorm(int j,int k,int l,FloatPoint *Normalized){
-    #define res 50                  //res standing fro resoltion
+void GraphNorm(int i,FloatPoint *Normalized){
+    #define res 50                  //res standing for resolution
     char YesNot;
     int PointFlag=0;
+    int j,k,l;
 
     printf("Digite 'Y' para ver representacao grafica: ");
     getchar();
@@ -158,7 +179,7 @@ void GraphNorm(int j,int k,int l,FloatPoint *Normalized){
         for(j=0;j<=res;j++){
             for(k=0;k<=res;k++){
                 for(l=0;l<i;l++){
-                    if((round(Normalized[l].NormPointX*res)/res) == ((float)k/(float)res) && (round(Normalized[l].NormPointY*res)/res) == ((float)j/(float)res)){
+                    if((round(Normalized[l].PointX*res)/res) == ((float)k/(float)res) && (round(Normalized[l].PointY*res)/res) == ((float)j/(float)res)){
                         PointFlag = 1;
                         printf("o ");
                         break;
