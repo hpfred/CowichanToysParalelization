@@ -32,10 +32,13 @@ typedef struct FloatPoint{
     float PointY;
 }FloatPoint;
 
+void GraphVector(int j,int k,int l,Point *Vector);
+void GraphNorm(int j,int k,int l,FloatPoint *Normalized);
+
 int main(){
     Point *Vector;
     FloatPoint *Normalized;
-    int i=0,j,k,l,PointFlag=0;
+    int i=0,j,k,l;
     double start, end;
 
     ///Cria Vector dinamico e recebe coordenadas dos pontos
@@ -68,34 +71,10 @@ int main(){
             Ymin = Vector[j].PointY;
     }
 
-    start = omp_get_wtime();
-
     ///Representação gráfica dos pontos informados, em uma matriz
-    /*
-    char YesNot;
-    printf("Digite 'Y' para ver representacao grafica: ");
-    getchar();
-    scanf("%c",&YesNot);
-    if(YesNot == 'Y'){
-        //Se for paralelizar, ver depois, representação gráfica não faz parte do toy
-        for(j=1;j<=Ymax;j++){
-            for(k=1;k<=Xmax;k++){
-                for(l=0;l<i;l++){
-                    if(Vector[l].PointX == k && Vector[l].PointY == j){
-                        PointFlag = 1;
-                        printf("o ");
-                        break;
-                    }
-                    PointFlag = 0;
-                }
-                if(PointFlag == 0){
-                    printf("- ");
-                }
-            }
-            printf("\n");
-        }
-    }
-    //*/
+    //GraphVector(j,k,l,Normalized);
+
+    start = omp_get_wtime();
 
     ///Faz o cálculo da normalização paralelizado
     ///Para cada ponto, cria uma thread, calculando a normalização de X e Y
@@ -130,17 +109,28 @@ int main(){
     printf("\n");
 
     ///Representação gráfica dos pontos normalizados, em uma matriz
-    /*
+    //GraphNorm(j,k,l,Normalized);
+
+    ///Imprime o tempo registrado
+    printf("\nTempo: %4.5lf\n",end-start);
+
+    ///Ao fim do progarama dar free no Vector, por boas práticas
+    free(Vector);
+    return 0;
+}
+
+void GraphVector(int j,int k,int l,Point *Vector){
+    int PointFlag=0;
+    char YesNot;
+
     printf("Digite 'Y' para ver representacao grafica: ");
     getchar();
     scanf("%c",&YesNot);
     if(YesNot == 'Y'){
-        //Se for paralelizar, ver depois, representação gráfica não faz parte do toy
-        #define res 50                  //res standing fro resoltion
-        for(j=0;j<=res;j++){
-            for(k=0;k<=res;k++){
+        for(j=1;j<=Ymax;j++){
+            for(k=1;k<=Xmax;k++){
                 for(l=0;l<i;l++){
-                    if((round(Param[l].NormPointX*res)/res) == ((float)k/(float)res) && (round(Param[l].NormPointY*res)/res) == ((float)j/(float)res)){
+                    if(Vector[l].PointX == k && Vector[l].PointY == j){
                         PointFlag = 1;
                         printf("o ");
                         break;
@@ -154,12 +144,32 @@ int main(){
             printf("\n");
         }
     }
-    //*/
+}
 
-    ///Imprime o tempo registrado
-    printf("\nTempo: %4.5lf\n",end-start);
+void GraphNorm(int j,int k,int l,FloatPoint *Normalized){
+    #define res 50                  //res standing fro resoltion
+    char YesNot;
+    int PointFlag=0;
 
-    ///Ao fim do progarama dar free no Vector, por boas práticas
-    free(Vector);
-    return 0;
+    printf("Digite 'Y' para ver representacao grafica: ");
+    getchar();
+    scanf("%c",&YesNot);
+    if(YesNot == 'Y'){
+        for(j=0;j<=res;j++){
+            for(k=0;k<=res;k++){
+                for(l=0;l<i;l++){
+                    if((round(Normalized[l].NormPointX*res)/res) == ((float)k/(float)res) && (round(Normalized[l].NormPointY*res)/res) == ((float)j/(float)res)){
+                        PointFlag = 1;
+                        printf("o ");
+                        break;
+                    }
+                    PointFlag = 0;
+                }
+                if(PointFlag == 0){
+                    printf("- ");
+                }
+            }
+            printf("\n");
+        }
+    }
 }

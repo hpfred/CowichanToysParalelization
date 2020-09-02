@@ -1,6 +1,7 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
+/// Artigo: Benchmark Cowichan - Toy: Point Location Normalization
+/// Aluno: Frederico Peixoto Antunes
+/// Status: Funcionando
+/// Descrição: Implementação do toy sem nenhum sistema de paralelização
 
 /*
 This module normalizes point coordinates so that all points lie within the unit square [0..1]×[0..1].
@@ -14,6 +15,11 @@ points: a vector of point locations.
 Outputs
 points: a vector of normalized point locations.
 */
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <math.h>
+#include <sys/time.h>
 
 typedef struct Point{
     int PointX;
@@ -29,9 +35,10 @@ int main(){
     Point *Vector;
     FloatPoint *Normalized;
     int i=0,j,k,l,PointFlag=0;
+    struct timeval  start, end;
 
     Vector = malloc(sizeof(Point));
-    //Aidiconar texto explicando para informar pares de coordenadas de pontos, e digitar -1 para finalizar
+    printf("Informe pares de coordenadas dos pontos. Digite -1 para encerrar recebimento de pontos.\n");
     while(scanf("%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && scanf("%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
         i++;
         Vector = realloc(Vector, sizeof(Point)*(i+1));
@@ -83,11 +90,15 @@ int main(){
         }
     }
 
+    gettimeofday(&start, NULL);
+
     ///Faz o cálculo da normalização dos pontos
     for(j=0;j<i;j++){
         Normalized[j].PointX = (float)(Vector[j].PointX - Xmin)/(float)(Xmax - Xmin);
         Normalized[j].PointY = (float)(Vector[j].PointY - Ymin)/(float)(Ymax - Ymin);
     }
+
+    gettimeofday(&end, NULL);
 
     ///Imprime todas coordenadas de pontos normalizadas
     for(j=0;j<i;j++){
@@ -118,7 +129,9 @@ int main(){
         }
     }
 
-    ///Resolver paralelização
+    ///Imprime o tempo registrado
+    //printf("\nTempo: %lf\n",(double)(end - start)/CLOCKS_PER_SEC);
+    printf("Total time = %f seconds\n",(double)(tv2.tv_usec-tv1.tv_usec)/1000000+(double)(tv2.tv_sec-tv1.tv_sec));
 
     ///Ao fim do progarama dar free no Vector, por boas práticas
     free(Vector);
