@@ -37,9 +37,12 @@ int main(){
     int i=0,j,k,l,PointFlag=0;
     struct timeval  start, end;
 
+    FILE *arquivo;
+    arquivo = fopen("Arquivo","r");
+
     Vector = malloc(sizeof(Point));
     printf("Informe pares de coordenadas dos pontos. Digite -1 para encerrar recebimento de pontos.\n");
-    while(scanf("%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && scanf("%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
+    while(fscanf(arquivo,"%d",&(Vector[i].PointX)) != EOF && Vector[i].PointX != -1 && fscanf(arquivo,"%d",&(Vector[i].PointY)) != EOF && Vector[i].PointY != -1){
         i++;
         Vector = realloc(Vector, sizeof(Point)*(i+1));
     }
@@ -131,10 +134,11 @@ int main(){
 
     ///Imprime o tempo registrado
     //printf("\nTempo: %lf\n",(double)(end - start)/CLOCKS_PER_SEC);
-    printf("Total time = %f seconds\n",(double)(tv2.tv_usec-tv1.tv_usec)/1000000+(double)(tv2.tv_sec-tv1.tv_sec));
+    printf("Total time = %f seconds\n",(double)(end.tv_usec-start.tv_usec)/1000000+(double)(end.tv_sec-start.tv_sec));
 
     ///Ao fim do progarama dar free no Vector, por boas práticas
     free(Vector);
     free(Normalized);
+    fclose(arquivo);
     return 0;
 }
